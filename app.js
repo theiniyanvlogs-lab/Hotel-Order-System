@@ -4,6 +4,15 @@
 const bell = new Audio("bell.mp3");
 
 /***********************
+ 👤 STAFF ID (TEMP LOGIN)
+************************/
+const STAFF_ID =
+  localStorage.getItem("staffId") ||
+  prompt("Enter your name (Chef / Supply):");
+
+localStorage.setItem("staffId", STAFF_ID);
+
+/***********************
  🔥 Firebase Init
 ************************/
 firebase.initializeApp({
@@ -34,6 +43,7 @@ function sendOrder() {
     table: table,
     dish: dish,
     status: "Kitchen",
+    assignedTo: null,   // 🔥 NEW
     time: Date.now()
   });
 
@@ -41,20 +51,34 @@ function sendOrder() {
 }
 
 /***********************
- 👨‍🍳 KITCHEN
+ 👨‍🍳 KITCHEN ACTIONS
 ************************/
+function acceptKitchen(id) {
+  ordersRef.doc(id).update({
+    assignedTo: STAFF_ID
+  });
+}
+
 function finishOrder(id) {
   ordersRef.doc(id).update({
-    status: "Supply"
+    status: "Supply",
+    assignedTo: null   // free kitchen, supply will accept
   });
 }
 
 /***********************
- 🚶 SUPPLY
+ 🚶 SUPPLY ACTIONS
 ************************/
+function acceptSupply(id) {
+  ordersRef.doc(id).update({
+    assignedTo: STAFF_ID
+  });
+}
+
 function serve(id) {
   ordersRef.doc(id).update({
-    status: "Done"
+    status: "Done",
+    assignedTo: null
   });
 }
 
@@ -97,37 +121,76 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
         <div class="card ${cls}">
           <h3>Table ${o.table}</h3>
           <p>${o.dish}</p>
-          <strong>${o.status}</strong>
+          <p>Status: <strong>${o.status}</strong></p>
+          ${o.assignedTo ? `<p>By: ${o.assignedTo}</p>` : ""}
         </div>
       `;
     }
 
     /******** KITCHEN VIEW ********/
     if (kitchen && o.status === "Kitchen") {
-      kitchen.innerHTML += `
-        <div class="card status-kitchen">
-          <h3>Table ${o.table}</h3>
-          <p>${o.dish}</p>
-          <button class="btn-finish"
-            onclick="finishOrder('${doc.id}')">
-            Finish
-          </button>
-        </div>
-      `;
+
+      // Not assigned → show Accept
+      if (!o.assignedTo) {
+        kitchen.innerHTML += `
+          <div class="card status-kitchen">
+            <h3>Table ${o.table}</h3>
+            <p>${o.dish}</p>
+            <button class="btn-finish"
+              onclick="acceptKitchen('${doc.id}')">
+              Accept
+            </button>
+          </div>
+        `;
+      }
+
+      // Assigned to ME → show Finish
+      if (o.assignedTo === STAFF_ID) {
+        kitchen.innerHTML += `
+          <div class="card status-kitchen">
+            <h3>Table ${o.table}</h3>
+            <p>${o.dish}</p>
+            <p><strong>Assigned to you</strong></p>
+            <button class="btn-finish"
+              onclick="finishOrder('${doc.id}')">
+              Finish
+            </button>
+          </div>
+        `;
+      }
     }
 
     /******** SUPPLY VIEW ********/
     if (supply && o.status === "Supply") {
-      supply.innerHTML += `
-        <div class="card status-supply">
-          <h3>Table ${o.table}</h3>
-          <p>${o.dish}</p>
-          <button class="btn-serve"
-            onclick="serve('${doc.id}')">
-            Served
-          </button>
-        </div>
-      `;
+
+      // Not assigned → Accept
+      if (!o.assignedTo) {
+        supply.innerHTML += `
+          <div class="card status-supply">
+            <h3>Table ${o.table}</h3>
+            <p>${o.dish}</p>
+            <button class="btn-serve"
+              onclick="acceptSupply('${doc.id}')">
+              Accept
+            </button>
+          </div>
+        `;
+      }
+
+      // Assigned to ME → Served
+      if (o.assignedTo === STAFF_ID) {
+        supply.innerHTML += `
+          <div class="card status-supply">
+            <h3>Table ${o.table}</h3>
+            <p>${o.dish}</p>
+            <p><strong>Assigned to you</strong></p>
+            <button class="btn-serve"
+              onclick="serve('${doc.id}')">
+              Served
+            </button>
+          </div>
+        `;
+      }
     }
 
   });
