@@ -1,10 +1,11 @@
 /***********************
- 🔔 Sound Notification
+ 🔔 Bell Sound (loop)
 ************************/
 const bell = new Audio("bell.mp3");
+bell.loop = true;
 
 /***********************
- 👤 STAFF ID (TEMP LOGIN)
+ 👤 STAFF ID
 ************************/
 const STAFF_ID =
   localStorage.getItem("staffId") ||
@@ -35,15 +36,16 @@ function sendOrder() {
   const dish = document.getElementById("dish").value;
 
   if (!dish) {
-    alert("Please enter dish name");
+    alert("Enter dish name");
     return;
   }
 
   ordersRef.add({
-    table: table,
-    dish: dish,
+    table,
+    dish,
     status: "Kitchen",
-    assignedTo: null,   // 🔥 NEW
+    assignedTo: null,
+    ringing: true,      // 🔔 start ringing for kitchen
     time: Date.now()
   });
 
@@ -55,14 +57,16 @@ function sendOrder() {
 ************************/
 function acceptKitchen(id) {
   ordersRef.doc(id).update({
-    assignedTo: STAFF_ID
+    assignedTo: STAFF_ID,
+    ringing: false     // 🔕 STOP bell for all kitchens
   });
 }
 
 function finishOrder(id) {
   ordersRef.doc(id).update({
     status: "Supply",
-    assignedTo: null   // free kitchen, supply will accept
+    assignedTo: null,
+    ringing: true      // 🔔 start ringing for suppliers
   });
 }
 
@@ -71,33 +75,25 @@ function finishOrder(id) {
 ************************/
 function acceptSupply(id) {
   ordersRef.doc(id).update({
-    assignedTo: STAFF_ID
+    assignedTo: STAFF_ID,
+    ringing: false     // 🔕 STOP bell for all suppliers
   });
 }
 
 function serve(id) {
   ordersRef.doc(id).update({
     status: "Done",
-    assignedTo: null
+    assignedTo: null,
+    ringing: false
   });
 }
 
 /***********************
  🔄 REAL-TIME LISTENER
 ************************/
-let lastCount = 0;
-
 ordersRef.orderBy("time").onSnapshot(snapshot => {
 
   const docs = snapshot.docs;
-
-  // 🔔 Play sound ONLY on Kitchen page for NEW orders
-  if (docs.length > lastCount) {
-    if (document.getElementById("kitchenList")) {
-      bell.play().catch(() => {});
-    }
-  }
-  lastCount = docs.length;
 
   const status = document.getElementById("status");
   const kitchen = document.getElementById("kitchenList");
@@ -107,8 +103,20 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
   if (kitchen) kitchen.innerHTML = "";
   if (supply) supply.innerHTML = "";
 
+  let shouldRing = false;
+
   docs.forEach(doc => {
     const o = doc.data();
+
+    // 🔔 Decide ringing logic
+    if (o.ringing) {
+      if (
+        (kitchen && o.status === "Kitchen") ||
+        (supply && o.status === "Supply")
+      ) {
+        shouldRing = true;
+      }
+    }
 
     /******** ORDER TAKER VIEW ********/
     if (status) {
@@ -121,16 +129,13 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
         <div class="card ${cls}">
           <h3>Table ${o.table}</h3>
           <p>${o.dish}</p>
-          <p>Status: <strong>${o.status}</strong></p>
-          ${o.assignedTo ? `<p>By: ${o.assignedTo}</p>` : ""}
-        </div>
-      `;
+          <strong>${o.status}</strong>
+        </div>`;
     }
 
     /******** KITCHEN VIEW ********/
     if (kitchen && o.status === "Kitchen") {
 
-      // Not assigned → show Accept
       if (!o.assignedTo) {
         kitchen.innerHTML += `
           <div class="card status-kitchen">
@@ -140,11 +145,9 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
               onclick="acceptKitchen('${doc.id}')">
               Accept
             </button>
-          </div>
-        `;
+          </div>`;
       }
 
-      // Assigned to ME → show Finish
       if (o.assignedTo === STAFF_ID) {
         kitchen.innerHTML += `
           <div class="card status-kitchen">
@@ -155,15 +158,13 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
               onclick="finishOrder('${doc.id}')">
               Finish
             </button>
-          </div>
-        `;
+          </div>`;
       }
     }
 
     /******** SUPPLY VIEW ********/
     if (supply && o.status === "Supply") {
 
-      // Not assigned → Accept
       if (!o.assignedTo) {
         supply.innerHTML += `
           <div class="card status-supply">
@@ -173,11 +174,9 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
               onclick="acceptSupply('${doc.id}')">
               Accept
             </button>
-          </div>
-        `;
+          </div>`;
       }
 
-      // Assigned to ME → Served
       if (o.assignedTo === STAFF_ID) {
         supply.innerHTML += `
           <div class="card status-supply">
@@ -188,10 +187,18 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
               onclick="serve('${doc.id}')">
               Served
             </button>
-          </div>
-        `;
+          </div>`;
       }
     }
 
   });
+
+  // 🔔 GLOBAL BELL CONTROL
+  if (shouldRing) {
+    bell.play().catch(() => {});
+  } else {
+    bell.pause();
+    bell.currentTime = 0;
+  }
+
 });
