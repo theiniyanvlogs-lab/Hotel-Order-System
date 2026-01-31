@@ -1,0 +1,67 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 15px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+  margin: 0 0 8px;
+}
+
+.status-kitchen {
+  border-left: 6px solid orange;
+}
+
+.status-supply {
+  border-left: 6px solid dodgerblue;
+}
+
+.status-done {
+  border-left: 6px solid green;
+}
+
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-finish {
+  background: orange;
+  color: white;
+}
+
+.btn-serve {
+  background: dodgerblue;
+  color: white;
+}
+
+.btn-send {
+  background: #28a745;
+  color: white;
+  width: 100%;
+  margin-top: 10px;
+}
+
+select, input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
