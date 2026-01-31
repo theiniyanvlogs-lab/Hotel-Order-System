@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="style.css">
-
   <meta charset="UTF-8">
+
   <title>Order Taker</title>
+
+  <!-- POS UI -->
+  <link rel="stylesheet" href="style.css">
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
@@ -22,18 +24,22 @@
   </select>
 
   <input id="dish" placeholder="Dish name" />
-  <button class="btn-send" onclick="sendOrder()">Send to Kitchen</button>
+
+  <button class="btn-send" onclick="sendOrder()">
+    Send to Kitchen
+  </button>
 
   <h3>Status</h3>
   <ul id="status"></ul>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Main App Logic -->
+  <!-- App Logic -->
   <script src="app.js"></script>
 
-  <!-- Service Worker Registration -->
+  <!-- Service Worker -->
   <script>
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js")
