@@ -5,6 +5,20 @@ const bell = new Audio("bell.mp3");
 bell.loop = true;
 
 /***********************
+ 🔓 AUDIO UNLOCK (CRITICAL)
+************************/
+function unlockAudio() {
+  bell.play().then(() => {
+    bell.pause();
+    bell.currentTime = 0;
+    document.removeEventListener("click", unlockAudio);
+  }).catch(() => {});
+}
+
+// Browser requires user interaction once
+document.addEventListener("click", unlockAudio);
+
+/***********************
  👤 STAFF ID
 ************************/
 const STAFF_ID =
@@ -45,7 +59,7 @@ function sendOrder() {
     dish,
     status: "Kitchen",
     assignedTo: null,
-    ringing: true,      // 🔔 start ringing for kitchen
+    ringing: true,   // 🔔 start kitchen ringing
     time: Date.now()
   });
 
@@ -58,7 +72,7 @@ function sendOrder() {
 function acceptKitchen(id) {
   ordersRef.doc(id).update({
     assignedTo: STAFF_ID,
-    ringing: false     // 🔕 STOP bell for all kitchens
+    ringing: false   // 🔕 stop bell for ALL kitchens
   });
 }
 
@@ -66,7 +80,7 @@ function finishOrder(id) {
   ordersRef.doc(id).update({
     status: "Supply",
     assignedTo: null,
-    ringing: true      // 🔔 start ringing for suppliers
+    ringing: true    // 🔔 start supply ringing
   });
 }
 
@@ -76,7 +90,7 @@ function finishOrder(id) {
 function acceptSupply(id) {
   ordersRef.doc(id).update({
     assignedTo: STAFF_ID,
-    ringing: false     // 🔕 STOP bell for all suppliers
+    ringing: false   // 🔕 stop bell for ALL suppliers
   });
 }
 
@@ -108,7 +122,7 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
   docs.forEach(doc => {
     const o = doc.data();
 
-    // 🔔 Decide ringing logic
+    // 🔔 Decide bell ringing
     if (o.ringing) {
       if (
         (kitchen && o.status === "Kitchen") ||
@@ -118,7 +132,7 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
       }
     }
 
-    /******** ORDER TAKER VIEW ********/
+    /******** ORDER TAKER ********/
     if (status) {
       let cls =
         o.status === "Kitchen" ? "status-kitchen" :
@@ -133,7 +147,7 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
         </div>`;
     }
 
-    /******** KITCHEN VIEW ********/
+    /******** KITCHEN ********/
     if (kitchen && o.status === "Kitchen") {
 
       if (!o.assignedTo) {
@@ -162,7 +176,7 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
       }
     }
 
-    /******** SUPPLY VIEW ********/
+    /******** SUPPLY ********/
     if (supply && o.status === "Supply") {
 
       if (!o.assignedTo) {
