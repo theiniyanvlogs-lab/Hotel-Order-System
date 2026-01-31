@@ -8,7 +8,7 @@ bell.loop = true;
 let soundEnabled = localStorage.getItem("soundEnabled") === "true";
 
 /***********************
- 📳 VIBRATION UTILITY (CRITICAL)
+ 📳 VIBRATION UTILITY
 ************************/
 function vibrateAlert() {
   if (navigator.vibrate) {
@@ -34,15 +34,13 @@ function enableSoundClick() {
         btn.classList.add("sound-on");
         btn.innerText = "🔊 Sound Enabled";
       }
-
-      console.log("🔔 Sound enabled");
     })
     .catch(() => {
       alert("Tap again to enable sound");
     });
 }
 
-// Restore green state on reload
+// Restore green state
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("enableSound");
   if (btn && soundEnabled) {
@@ -101,7 +99,7 @@ function sendOrder() {
 }
 
 /***********************
- 👨‍🍳 KITCHEN ACTIONS
+ 👨‍🍳 KITCHEN
 ************************/
 function acceptKitchen(id) {
   ordersRef.doc(id).update({
@@ -119,7 +117,7 @@ function finishOrder(id) {
 }
 
 /***********************
- 🚶 SUPPLY ACTIONS
+ 🚶 SUPPLY
 ************************/
 function acceptSupply(id) {
   ordersRef.doc(id).update({
@@ -137,11 +135,38 @@ function serve(id) {
 }
 
 /***********************
+ 🔥 ALL CLEAR (MANAGER)
+************************/
+function allClear() {
+  const pwd = prompt("Enter manager password");
+
+  if (pwd !== "1854") {
+    alert("❌ Wrong password");
+    return;
+  }
+
+  const ok = confirm(
+    "⚠️ Are you sure?\nThis will DELETE ALL orders permanently!"
+  );
+
+  if (!ok) return;
+
+  ordersRef.get().then(snapshot => {
+    const batch = db.batch();
+    snapshot.forEach(doc => batch.delete(doc.ref));
+    return batch.commit();
+  }).then(() => {
+    alert("✅ All orders cleared");
+  }).catch(err => {
+    alert("❌ Error while clearing");
+    console.error(err);
+  });
+}
+
+/***********************
  🔄 REAL-TIME LISTENER
 ************************/
 ordersRef.orderBy("time").onSnapshot(snapshot => {
-
-  const docs = snapshot.docs;
 
   const status = document.getElementById("status");
   const kitchen = document.getElementById("kitchenList");
@@ -153,10 +178,9 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
 
   let shouldRing = false;
 
-  docs.forEach(doc => {
+  snapshot.docs.forEach(doc => {
     const o = doc.data();
 
-    // 🔔 Decide alert
     if (
       o.ringing &&
       (
@@ -218,16 +242,13 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
   });
 
   /***********************
-   🔔 FINAL ALERT CONTROL
+   🔔 ALERT CONTROL
   ************************/
   if (shouldRing) {
-    if (soundEnabled) {
-      bell.play().catch(() => {});
-    }
-    vibrateAlert(); // 📳 GUARANTEED alert on ALL phones
+    if (soundEnabled) bell.play().catch(() => {});
+    vibrateAlert();
   } else {
     bell.pause();
     bell.currentTime = 0;
   }
-
 });
