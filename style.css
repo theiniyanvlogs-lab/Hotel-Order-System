@@ -22,6 +22,7 @@ h2 {
   margin: 0 0 8px;
 }
 
+/* ===== STATUS COLORS ===== */
 .status-kitchen {
   border-left: 6px solid orange;
 }
@@ -34,6 +35,7 @@ h2 {
   border-left: 6px solid green;
 }
 
+/* ===== BUTTONS ===== */
 button {
   padding: 8px 14px;
   border: none;
@@ -59,9 +61,44 @@ button {
   margin-top: 10px;
 }
 
+/* ===== INPUTS ===== */
 select, input {
   width: 100%;
   padding: 8px;
   margin-top: 6px;
   margin-bottom: 6px;
+}
+
+/* =================================================
+   🔊 ENABLE SOUND BUTTON (YELLOW → GREEN)
+   ================================================= */
+
+/* Base sound button */
+.sound-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+/* 🟡 Sound OFF (default) */
+.sound-btn.sound-off {
+  background: #fff3cd;
+  border: 2px solid orange;
+  color: #856404;
+}
+
+/* 🟢 Sound ON (after click) */
+.sound-btn.sound-on {
+  background: #d4edda;
+  border: 2px solid green;
+  color: #155724;
+}
+
+/* Hover effect */
+.sound-btn:hover {
+  opacity: 0.9;
 }
