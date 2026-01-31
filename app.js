@@ -8,6 +8,15 @@ bell.loop = true;
 let soundEnabled = localStorage.getItem("soundEnabled") === "true";
 
 /***********************
+ 📳 VIBRATION UTILITY (CRITICAL)
+************************/
+function vibrateAlert() {
+  if (navigator.vibrate) {
+    navigator.vibrate([500, 300, 500, 300, 500]);
+  }
+}
+
+/***********************
  🔊 ENABLE SOUND BUTTON
 ************************/
 function enableSoundClick() {
@@ -28,9 +37,8 @@ function enableSoundClick() {
 
       console.log("🔔 Sound enabled");
     })
-    .catch(err => {
+    .catch(() => {
       alert("Tap again to enable sound");
-      console.error(err);
     });
 }
 
@@ -85,7 +93,7 @@ function sendOrder() {
     dish,
     status: "Kitchen",
     assignedTo: null,
-    ringing: true,   // 🔔 start kitchen ringing
+    ringing: true,
     time: Date.now()
   });
 
@@ -98,7 +106,7 @@ function sendOrder() {
 function acceptKitchen(id) {
   ordersRef.doc(id).update({
     assignedTo: STAFF_ID,
-    ringing: false   // 🔕 stop bell for ALL kitchens
+    ringing: false
   });
 }
 
@@ -106,7 +114,7 @@ function finishOrder(id) {
   ordersRef.doc(id).update({
     status: "Supply",
     assignedTo: null,
-    ringing: true    // 🔔 start supply ringing
+    ringing: true
   });
 }
 
@@ -116,7 +124,7 @@ function finishOrder(id) {
 function acceptSupply(id) {
   ordersRef.doc(id).update({
     assignedTo: STAFF_ID,
-    ringing: false   // 🔕 stop bell for ALL suppliers
+    ringing: false
   });
 }
 
@@ -148,19 +156,20 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
   docs.forEach(doc => {
     const o = doc.data();
 
-    // 🔔 Decide bell ringing
-    if (o.ringing) {
-      if (
+    // 🔔 Decide alert
+    if (
+      o.ringing &&
+      (
         (kitchen && o.status === "Kitchen") ||
         (supply && o.status === "Supply")
-      ) {
-        shouldRing = true;
-      }
+      )
+    ) {
+      shouldRing = true;
     }
 
     /******** ORDER TAKER ********/
     if (status) {
-      let cls =
+      const cls =
         o.status === "Kitchen" ? "status-kitchen" :
         o.status === "Supply" ? "status-supply" :
         "status-done";
@@ -175,66 +184,47 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
 
     /******** KITCHEN ********/
     if (kitchen && o.status === "Kitchen") {
-
-      if (!o.assignedTo) {
-        kitchen.innerHTML += `
-          <div class="card status-kitchen">
-            <h3>Table ${o.table}</h3>
-            <p>${o.dish}</p>
-            <button class="btn-finish"
-              onclick="acceptKitchen('${doc.id}')">
-              Accept
-            </button>
-          </div>`;
-      }
-
-      if (o.assignedTo === STAFF_ID) {
-        kitchen.innerHTML += `
-          <div class="card status-kitchen">
-            <h3>Table ${o.table}</h3>
-            <p>${o.dish}</p>
-            <p><strong>Assigned to you</strong></p>
-            <button class="btn-finish"
-              onclick="finishOrder('${doc.id}')">
-              Finish
-            </button>
-          </div>`;
-      }
+      kitchen.innerHTML += `
+        <div class="card status-kitchen">
+          <h3>Table ${o.table}</h3>
+          <p>${o.dish}</p>
+          ${
+            !o.assignedTo
+              ? `<button class="btn-finish" onclick="acceptKitchen('${doc.id}')">Accept</button>`
+              : o.assignedTo === STAFF_ID
+                ? `<p><strong>Assigned to you</strong></p>
+                   <button class="btn-finish" onclick="finishOrder('${doc.id}')">Finish</button>`
+                : `<p><em>Assigned to ${o.assignedTo}</em></p>`
+          }
+        </div>`;
     }
 
     /******** SUPPLY ********/
     if (supply && o.status === "Supply") {
-
-      if (!o.assignedTo) {
-        supply.innerHTML += `
-          <div class="card status-supply">
-            <h3>Table ${o.table}</h3>
-            <p>${o.dish}</p>
-            <button class="btn-serve"
-              onclick="acceptSupply('${doc.id}')">
-              Accept
-            </button>
-          </div>`;
-      }
-
-      if (o.assignedTo === STAFF_ID) {
-        supply.innerHTML += `
-          <div class="card status-supply">
-            <h3>Table ${o.table}</h3>
-            <p>${o.dish}</p>
-            <p><strong>Assigned to you</strong></p>
-            <button class="btn-serve"
-              onclick="serve('${doc.id}')">
-              Served
-            </button>
-          </div>`;
-      }
+      supply.innerHTML += `
+        <div class="card status-supply">
+          <h3>Table ${o.table}</h3>
+          <p>${o.dish}</p>
+          ${
+            !o.assignedTo
+              ? `<button class="btn-serve" onclick="acceptSupply('${doc.id}')">Accept</button>`
+              : o.assignedTo === STAFF_ID
+                ? `<p><strong>Assigned to you</strong></p>
+                   <button class="btn-serve" onclick="serve('${doc.id}')">Served</button>`
+                : `<p><em>Assigned to ${o.assignedTo}</em></p>`
+          }
+        </div>`;
     }
   });
 
-  // 🔔 GLOBAL BELL CONTROL
-  if (shouldRing && soundEnabled) {
-    bell.play().catch(() => {});
+  /***********************
+   🔔 FINAL ALERT CONTROL
+  ************************/
+  if (shouldRing) {
+    if (soundEnabled) {
+      bell.play().catch(() => {});
+    }
+    vibrateAlert(); // 📳 GUARANTEED alert on ALL phones
   } else {
     bell.pause();
     bell.currentTime = 0;
