@@ -4,19 +4,45 @@
 const bell = new Audio("bell.mp3");
 bell.loop = true;
 
+// 🔊 sound state per phone
+let soundEnabled = localStorage.getItem("soundEnabled") === "true";
+
 /***********************
- 🔓 AUDIO UNLOCK (CRITICAL)
+ 🔊 ENABLE SOUND BUTTON
 ************************/
-function unlockAudio() {
-  bell.play().then(() => {
-    bell.pause();
-    bell.currentTime = 0;
-    document.removeEventListener("click", unlockAudio);
-  }).catch(() => {});
+function enableSoundClick() {
+  bell.play()
+    .then(() => {
+      bell.pause();
+      bell.currentTime = 0;
+
+      soundEnabled = true;
+      localStorage.setItem("soundEnabled", "true");
+
+      const btn = document.getElementById("enableSound");
+      if (btn) {
+        btn.classList.remove("sound-off");
+        btn.classList.add("sound-on");
+        btn.innerText = "🔊 Sound Enabled";
+      }
+
+      console.log("🔔 Sound enabled");
+    })
+    .catch(err => {
+      alert("Tap again to enable sound");
+      console.error(err);
+    });
 }
 
-// Browser requires user interaction once
-document.addEventListener("click", unlockAudio);
+// Restore green state on reload
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("enableSound");
+  if (btn && soundEnabled) {
+    btn.classList.remove("sound-off");
+    btn.classList.add("sound-on");
+    btn.innerText = "🔊 Sound Enabled";
+  }
+});
 
 /***********************
  👤 STAFF ID
@@ -204,11 +230,10 @@ ordersRef.orderBy("time").onSnapshot(snapshot => {
           </div>`;
       }
     }
-
   });
 
   // 🔔 GLOBAL BELL CONTROL
-  if (shouldRing) {
+  if (shouldRing && soundEnabled) {
     bell.play().catch(() => {});
   } else {
     bell.pause();
