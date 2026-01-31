@@ -1,0 +1,8 @@
+{
+  "name": "Hotel Order System",
+  "short_name": "HotelOrders",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff6600"
+}
